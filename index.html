@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Analytical Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 40px;
+        background: #f4f7f6;
+      }
+      .container {
+        max-width: 900px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-top: 20px;
+      }
+      .metric-card {
+        background: #eef2f3;
+        padding: 15px;
+        border-radius: 5px;
+        text-align: center;
+      }
+      .metric-card span {
+        display: block;
+        font-weight: bold;
+        font-size: 1.2em;
+        color: #2c3e50;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Data Analytics Dashboard</h2>
+
+      <div class="controls">
+        <select id="fieldSelect">
+          <option value="field1">Field 1 (e.g. Temp)</option>
+          <option value="field2">Field 2 (e.g. Humidity)</option>
+          <option value="field3">Field 3 (e.g. CO2)</option>
+        </select>
+        <input type="date" id="startDate" value="2006-04-01" />
+        <input type="date" id="endDate" value="2006-04-30" />
+        <button onclick="updateDashboard()">Update Analysis</button>
+      </div>
+
+      <canvas id="myChart" width="400" height="200"></canvas>
+
+      <div class="metrics-grid">
+        <div class="metric-card">Avg <span id="avg">-</span></div>
+        <div class="metric-card">Min <span id="min">-</span></div>
+        <div class="metric-card">Max <span id="max">-</span></div>
+        <div class="metric-card">Std Dev <span id="std">-</span></div>
+      </div>
+    </div>
+
+    <script>
+      let myChart;
+
+      async function updateDashboard() {
+        const field = document.getElementById("fieldSelect").value;
+        const start = document.getElementById("startDate").value;
+        const end = document.getElementById("endDate").value;
+
+        const metricsRes = await fetch(
+          `/api/measurements/metrics?field=${field}&start_date=${start}&end_date=${end}`,
+        );
+        const metrics = await metricsRes.json();
+
+        if (metrics.avg !== undefined) {
+          document.getElementById("avg").innerText = metrics.avg.toFixed(2);
+          document.getElementById("min").innerText = metrics.min;
+          document.getElementById("max").innerText = metrics.max;
+          document.getElementById("std").innerText = metrics.stdDev.toFixed(2);
+        }
+
+        const dataRes = await fetch(
+          `/api/measurements?field=${field}&start_date=${start}&end_date=${end}`,
+        );
+        const data = await dataRes.json();
+
+        const labels = data.map((d) =>
+          new Date(d.timestamp).toLocaleDateString(),
+        );
+        const values = data.map((d) => d[field]);
+
+        const ctx = document.getElementById("myChart").getContext("2d");
+        if (myChart) myChart.destroy();
+
+        myChart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: field + " over Time",
+                data: values,
+                borderColor: "#3498db",
+                fill: false,
+                tension: 0.1,
+              },
+            ],
+          },
+        });
+      }
+      updateDashboard();
+    </script>
+  </body>
+</html>
