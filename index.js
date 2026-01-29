@@ -20,7 +20,7 @@ const measurementSchema = new mongoose.Schema(
     "Humidity": { type: Number },
     "Pressure (millibars)": { type: Number }
   },
-  { collection: "measurements" }
+  { collection: "measurements" }  
 );
 
 const fieldMap = {
@@ -30,8 +30,6 @@ const fieldMap = {
 };
 
 const Measurement = mongoose.model('Measurement', measurementSchema, 'measurements'); 
-
-app.use(express.json());
 
 app.get('/', (req,res) => {
     res.sendFile(path.join(__dirname, "index.html"));
@@ -69,6 +67,7 @@ app.get('/api/measurements', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 app.get('/api/measurements/metrics', async (req, res) => {
   try {
     const { field, start_date, end_date } = req.query;
